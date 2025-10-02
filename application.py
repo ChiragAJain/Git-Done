@@ -266,7 +266,8 @@ def embed_widget(token):
     goal = Goal.query.filter_by(embed_token=token).first()
     if not goal:
         return "Widget not found", 404
-    response = make_response(render_template('embed.html', goal=goal))
+    theme = request.args.get('theme', 'dark')
+    response = make_response(render_template('embed.html', goal=goal, theme=theme))
     response.headers['X-Frame-Options'] = 'ALLOWALL'
     return response
 
