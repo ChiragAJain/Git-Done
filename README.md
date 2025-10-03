@@ -21,13 +21,24 @@ Set a coding goal, set a deadline, and watch the countdown tick. The timer only 
    pip install -r requirements.txt
    ```
 
-2. **Run the application**:
+2. **Set up environment variables**:
+   ```bash
+   cp .env.example .env
+   ```
+   Update .env with your own values (e.g. DATABASE_URL, SECRET_KEY, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET).
+
+3. **Run the application**:
    ```bash
    python application.py
    ```
 
-3. **Open locally in your browser**:
+4. **Open locally in your browser**:
    Navigate to `http://localhost:5000`
+
+5. **Run tests** (optional):
+   ```bash
+   pytest
+   ```
 
 ## Testing
 
