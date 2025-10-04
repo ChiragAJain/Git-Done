@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import secrets
 from dotenv import load_dotenv
+from flask import Response
 
 
 load_dotenv()
@@ -396,7 +397,34 @@ def health_check():
         'service': 'git-done-api'
     })
 
+# New route to download goal as .ics file
+@application.route('/api/goals/<int:goal_id>/calendar')
+def download_goal_ics(goal_id):
+    if 'user_github_id' not in session:
+        return jsonify({'error':'Not authenticated'}), 401
+
+    goal = Goal.query.get(goal_id)
+    if not goal or goal.user_github_id != session['user_github_id']:
+        return jsonify({'error':'Goal not found'}), 404
+
+    ics_content = f"""BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Git-Done//Deadline Event//EN
+BEGIN:VEVENT
+UID:{goal.id}@git-done.app
+DTSTAMP:{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}
+DTSTART:{goal.deadline.strftime('%Y%m%dT%H%M%SZ')}
+SUMMARY:{goal.description}
+DESCRIPTION:GitHub Repo: {goal.repo_url} | Completion Tag: {goal.completion_condition}
+END:VEVENT
+END:VCALENDAR"""
+
+    response = Response(ics_content, mimetype='text/calendar')
+    response.headers['Content-Disposition'] = f'attachment; filename=goal_{goal.id}.ics'
+    return response
+
+
 if __name__ == '__main__':
     with application.app_context():
         db.create_all()
-    # application.run(debug=True)
+        application.run(debug=True)
