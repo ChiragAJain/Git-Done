@@ -16,8 +16,10 @@
     <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/GD-Logo.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/GD-Logo.png') }}">
 
+    <!-- PWA Manifest -->
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
+    <!-- PWA Meta tags -->
     <meta name="theme-color" content="#6366f1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -35,6 +37,7 @@
                 <p>Procrastination killer for developers</p>
             </div>
             <div class="auth-box slide-in-right">
+                <!-- Contribute Button -->
                 <a href="https://github.com/ChiragAJain/Git-Done" target="_blank" rel="noopener noreferrer"
                     class="btn-contribute-header">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -104,7 +107,6 @@
                             <select id="completion-type" required>
                                 <option value="commit">Commit Message</option>
                                 <option value="issue">Issue Closed</option>
-                                <option value="pull_request_merged">Pull Request Merged</option>
                             </select>
                         </div>
                         <div class="input-group">
@@ -118,7 +120,8 @@
                 </div>
 
                 <div id="goals-container" class="fade-in-up">
-                    </div>
+                    <!-- Goals will be dynamically loaded here -->
+                </div>
             </div>
             {% else %}
             <div class="login-prompt card fade-in-up">
@@ -144,7 +147,8 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    </body>
+    <!--Test-Completed-->
+</body>
 
 
 </html>

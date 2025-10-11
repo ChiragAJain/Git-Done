@@ -75,28 +75,23 @@ class Goal(db.Model):
 
 def create_github_webhook(access_token, owner, repo, webhook_url, secret):
     api_url = f'https://api.github.com/repos/{owner}/{repo}/hooks'
-    headers = {
-        'Authorization': f'token {access_token}',
-        'Accept': 'application/vnd.github.v3+json'
+    headers ={
+        'Authorization':f'token {access_token}',
+        'Accept':'application/vnd.github.v3+json'
     }
     payload = {
-        'name': 'web',
-        'config': {
-            'url': webhook_url,
-            'content_type': 'json',
-            'secret': secret
+        'name':'web',
+        'config':{
+            'url':webhook_url,
+            'content_type':'json',
+            'secret':secret
         },
-        # Add 'pull_request' to this list
-        'events': ['push', 'issues', 'pull_request']
+        'events':['push', 'issues']
     }
-    response = requests.post(api_url, json=payload, headers=headers)
-
+    response = requests.post(api_url,json = payload,headers = headers)
     if response.status_code == 201:
-        print("Webhook created successfully!")
         return response.json()
     else:
-        print(f"Failed to create webhook: {response.status_code}")
-        print(response.json())
         return None
 
 def delete_github_webhook(access_token, owner, repo, webhook_id):
@@ -144,11 +139,9 @@ def service_worker():
 
 @application.route('/api/github-webhook', methods=['POST'])
 def github_webhook():
-    # --- Existing Signature Verification ---
     signature_header = request.headers.get('X-Hub-Signature-256')
     if not signature_header:
         return jsonify({'error': 'Request is missing signature header'}), 403
-    
     hash_object = hmac.new(
         application.config['SECRET_KEY'].encode('utf-8'),
         msg=request.data,
@@ -162,7 +155,6 @@ def github_webhook():
     payload = request.get_json()
     event_type = request.headers.get('X-GitHub-Event')
     
-    # --- Existing 'push' Handler ---
     if event_type == 'push':
         repo_full_name = payload.get('repository', {}).get('full_name')
         if not repo_full_name:
@@ -187,7 +179,6 @@ def github_webhook():
                 db.session.commit()
                 break
     
-    # --- Existing 'issues' Handler ---
     elif event_type == 'issues':
         action = payload.get('action')
         if action == 'closed':
@@ -213,39 +204,8 @@ def github_webhook():
                 goal.completed_at = datetime.utcnow()
                 db.session.commit()
 
-    # --- New Handler for Pull Requests ---
-    elif event_type == 'pull_request':
-        action = payload.get('action')
-        pull_request_data = payload.get('pull_request', {})
-        
-        # Check if the PR was closed AND merged
-        if action == 'closed' and pull_request_data.get('merged'):
-            repo_full_name = payload.get('repository', {}).get('full_name')
-            pr_number = pull_request_data.get('number')
-
-            if not repo_full_name or not pr_number:
-                return jsonify({'status': 'Payload missing repository or pull request information'}), 400
-
-            repo_owner, repo_name = repo_full_name.split('/')
-            
-            # Find the active goal for this repo that uses PR completion
-            goal = Goal.query.filter_by(
-                repo_owner=repo_owner,
-                repo_name=repo_name,
-                status='active',
-                completion_type='pull_request_merged'
-            ).first()
-
-            if not goal:
-                return jsonify({'status': 'No active goal for this repository with pull request completion type'}), 200
-
-            # Check if the merged PR number matches the goal's condition
-            if str(pr_number) == goal.completion_condition or f"#{pr_number}" == goal.completion_condition:
-                goal.status = 'completed'
-                goal.completed_at = datetime.utcnow()
-                db.session.commit()
-
     return jsonify({'status': 'received'}), 200
+
 @application.route('/auth/github')
 def github_auth():
     client_id = application.config['GITHUB_CLIENT_ID']
@@ -352,7 +312,6 @@ def get_goals():
     goals = Goal.query.filter_by(user_github_id = user_id).order_by(Goal.deadline.asc()).all()
     return jsonify([goal.to_dict() for goal in goals])
 
-
 @application.route('/api/goals', methods=['POST'])
 def create_goal():
     if 'user_github_id' not in session:
@@ -367,12 +326,10 @@ def create_goal():
     
     if not all(k in data for k in ('description','deadline','repo_url','completion_condition')):
         return jsonify({'error':'Missing required fields'}),400
-    
     user_id = session['user_github_id']
     user = User.query.filter_by(github_id = user_id).first()
     if not user:
         return jsonify({'error':'User not found'}),404
-    
     try:
         repo_url = data.get('repo_url')
         repo_owner,repo_name = repo_url.rstrip('/').split('/')[-2:]
@@ -380,13 +337,9 @@ def create_goal():
             repo_name = repo_name.replace('.git','')
     except (ValueError, IndexError):
         return jsonify({'error':'Invalid repository URL. Use format: https://github.com/owner/repo'}),400
-    
     embed_token = secrets.token_urlsafe(16)
     completion_type = data.get('completion_type', 'commit')
-
-    # --- THIS IS THE LINE TO FIX ---
-    # Add 'pull_request_merged' to this list.
-    if completion_type not in ['commit', 'issue', 'pull_request_merged']:
+    if completion_type not in ['commit', 'issue']:
         return jsonify({'error':'Invalid completion_type. Must be "commit" or "issue"'}),400
     
     try:
@@ -410,7 +363,6 @@ def create_goal():
     base_url = os.environ.get('BASE_URL')
     if not base_url:
         return jsonify(goal.to_dict()), 201
-    
     try:
         webhook_url = f'{base_url}/api/github-webhook'
         webhook_secret = application.config['SECRET_KEY']
