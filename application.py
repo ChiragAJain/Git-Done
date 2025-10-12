@@ -86,7 +86,7 @@ def create_github_webhook(access_token, owner, repo, webhook_url, secret):
             'content_type':'json',
             'secret':secret
         },
-        'events':['push', 'issues']
+        'events':['push', 'issues', 'pull_request']
     }
     response = requests.post(api_url,json = payload,headers = headers)
     if response.status_code == 201:
@@ -203,7 +203,34 @@ def github_webhook():
                 goal.status = 'completed'
                 goal.completed_at = datetime.utcnow()
                 db.session.commit()
-
+                
+            elif event_type == 'pull_request':
+                action = payload.get('action')
+                # Check if the PR was closed AND merged
+                if action == 'closed' and payload.get('pull_request', {}).get('merged'):
+                    repo_full_name = payload.get('repository', {}).get('full_name')
+                    pr_number = payload.get('pull_request', {}).get('number')
+            
+                    if not repo_full_name or not pr_number:
+                        return jsonify({'status': 'Payload missing repository or PR info'}), 400
+            
+                    repo_owner, repo_name = repo_full_name.split('/')
+                    goal = Goal.query.filter_by(
+                        repo_owner=repo_owner,
+                        repo_name=repo_name,
+                        status='active',
+                        completion_type='pr_merged'
+                    ).first()
+            
+                    if not goal:
+                        return jsonify({'status': 'No active goal for this repository with PR completion type'}), 200
+            
+                    # Check if the merged PR number matches the goal's condition
+                    if str(pr_number) == goal.completion_condition or f"#{pr_number}" == goal.completion_condition:
+                        goal.status = 'completed'
+                        goal.completed_at = datetime.utcnow()
+                        db.session.commit()
+                        
     return jsonify({'status': 'received'}), 200
 
 @application.route('/auth/github')
@@ -339,8 +366,8 @@ def create_goal():
         return jsonify({'error':'Invalid repository URL. Use format: https://github.com/owner/repo'}),400
     embed_token = secrets.token_urlsafe(16)
     completion_type = data.get('completion_type', 'commit')
-    if completion_type not in ['commit', 'issue']:
-        return jsonify({'error':'Invalid completion_type. Must be "commit" or "issue"'}),400
+    if completion_type not in ['commit', 'issue','pr_merged']:
+        return jsonify({'error':'Invalid completion_type. Must be "commit", "issue", or "pr_merged"'}),400
     
     try:
         goal = Goal(
