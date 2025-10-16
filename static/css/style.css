@@ -862,25 +862,32 @@ a:focus-visible {
 }
 
 /* PWA Specific Styles */
-#pwa-install-btn {
-    position: fixed !important;
-    bottom: 20px !important;
-    right: 20px !important;
-    z-index: 1000 !important;
-    opacity: 0.95 !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    box-shadow: var(--shadow-lg) !important;
-    border: 1px solid var(--glass-border) !important;
-    background: var(--glass-bg) !important;
+#pwa-install-btn,
+#ios-install-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    opacity: 0.95;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
     animation: pwa-install-pulse 2s infinite;
     display: none;
 }
 
-#pwa-install-btn:hover {
-    opacity: 1 !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.25) !important;
+#pwa-install-btn.show,
+#ios-install-btn.show {
+    display: block;
+}
+
+#pwa-install-btn:hover,
+#ios-install-btn:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
 }
 
 @keyframes pwa-install-pulse {
@@ -918,6 +925,54 @@ a:focus-visible {
 
 .pwa-update-notification button:hover {
     background: rgba(255,255,255,0.3);
+}
+
+/* iOS Install Modal */
+.ios-install-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.ios-install-content {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 100%;
+    backdrop-filter: blur(10px);
+}
+
+.ios-install-content h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.ios-install-content ol {
+    text-align: left;
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.ios-install-content li {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.ios-install-content .btn-primary {
+    width: 100%;
+    margin-top: 1rem;
 }
 
 @keyframes slideInRight {

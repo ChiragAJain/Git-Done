@@ -3,32 +3,35 @@
   "short_name": "Git-Done",
   "description": "Procrastination killer for developers. Create deadline-driven goals and track your progress with real-time countdowns.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#00d4aa",
-  "orientation": "portrait-primary",
+  "theme_color": "#6366f1",
+  "orientation": "any",
   "icons": [
     {
       "src": "/static/images/GD-Logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/GD-Logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any maskable"
     }
   ],
   "categories": ["productivity", "developer-tools"],
+  "lang": "en",
+  "id": "/",
   "shortcuts": [
     {
       "name": "Create New Goal",
       "short_name": "New Goal",
       "description": "Create a new deadline-driven goal",
       "url": "/?action=new-goal",
-      "icons": [{ "src": "/static/images/GD-Logo.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/static/images/GD-Logo.png", "sizes": "192x192" }]
     }
   ]
 }

@@ -1,31 +1,43 @@
-const CACHE_NAME = 'git-done-v2';
+const CACHE_NAME = 'git-done-v3';
 const STATIC_ASSETS = [
   '/',
   '/static/css/style.css',
   '/static/js/app.js',
   '/static/images/GD-Logo.png',
-  '/static/manifest.json',
-  // Font preloads
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap'
+  '/manifest.json'
 ];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Installing...');
-  
+
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
+        // Cache static assets individually to prevent one failure from breaking all
+        return Promise.allSettled(
+          STATIC_ASSETS.map(url =>
+            cache.add(url).catch(err => {
+              console.warn(`Failed to cache ${url}:`, err);
+              return null;
+            })
+          )
+        );
       })
-      .then(() => {
+      .then((results) => {
         console.log('Service Worker: Installation complete');
-        // Skip waiting to activate immediately
+        const failed = results.filter(r => r.status === 'rejected');
+        if (failed.length > 0) {
+          console.warn('Service Worker: Some assets failed to cache:', failed);
+        }
+        // Skip waiting to activate immediately for better PWA installation experience
         return self.skipWaiting();
       })
       .catch((error) => {
         console.error('Service Worker: Installation failed', error);
+        // Don't fail installation even if caching fails - PWA should still install
+        return self.skipWaiting();
       })
   );
 });

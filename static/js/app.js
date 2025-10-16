@@ -560,6 +560,194 @@ class PWAManager {
 		const notification = document.createElement("div");
 		notification.className = "pwa-update-notification";
 		notification.innerHTML = `
+
+    constructor() {
+        this.registerServiceWorker();
+        this.handleInstallPrompt();
+    }
+
+    async registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.register('/service-worker.js');
+                console.log('PWA: Service Worker registered successfully', registration);
+                
+                // Listen for updates
+                registration.addEventListener('updatefound', () => {
+                    console.log('PWA: New service worker version available');
+                    const newWorker = registration.installing;
+                    
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // Show update notification
+                            this.showUpdateNotification();
+                        }
+                    });
+                });
+                
+            } catch (error) {
+                console.error('PWA: Service Worker registration failed', error);
+            }
+        } else {
+            console.log('PWA: Service Worker not supported');
+        }
+    }
+
+    handleInstallPrompt() {
+        let deferredPrompt;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        // For iOS devices, show install instructions if not already installed
+        if (isIOS && !isStandalone) {
+            this.showIOSInstallInstructions();
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA: Install prompt available');
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Show custom install button
+            this.showInstallButton(deferredPrompt);
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA: App installed successfully');
+            deferredPrompt = null;
+            this.hideInstallButton();
+        });
+
+        // Fallback: Show button after delay if beforeinstallprompt hasn't fired
+        // This helps with desktop testing
+        setTimeout(() => {
+            if (!deferredPrompt && !isIOS && !isStandalone) {
+                console.log('PWA: Showing fallback install button');
+                this.showFallbackInstallButton();
+            }
+        }, 2000);
+    }
+
+    showInstallButton(deferredPrompt) {
+        // Create install button if it doesn't exist
+        let installButton = document.getElementById('pwa-install-btn');
+        if (!installButton) {
+            installButton = document.createElement('button');
+            installButton.id = 'pwa-install-btn';
+            installButton.className = 'btn-secondary';
+            installButton.innerHTML = '📱 Install App';
+
+            installButton.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('PWA: Install prompt outcome:', outcome);
+                    deferredPrompt = null;
+                    this.hideInstallButton();
+                }
+            });
+
+            // Append to body (bottom-right position)
+            document.body.appendChild(installButton);
+        }
+
+        installButton.classList.add('show');
+    }
+
+    hideInstallButton() {
+        const installButton = document.getElementById('pwa-install-btn');
+        if (installButton) {
+            installButton.classList.remove('show');
+        }
+    }
+
+    showIOSInstallInstructions() {
+        // Create iOS install instructions button
+        let iosButton = document.getElementById('ios-install-btn');
+        if (!iosButton) {
+            iosButton = document.createElement('button');
+            iosButton.id = 'ios-install-btn';
+            iosButton.className = 'btn-secondary';
+            iosButton.innerHTML = '📱 Install App';
+
+            iosButton.addEventListener('click', () => {
+                const modal = document.createElement('div');
+                modal.className = 'ios-install-modal';
+                modal.innerHTML = `
+                    <div class="ios-install-content">
+                        <h3>Install Git-Done on iOS</h3>
+                        <ol>
+                            <li>Tap the <strong>Share</strong> button <span style="font-size: 1.2em;">⎋</span> in Safari</li>
+                            <li>Scroll and tap <strong>"Add to Home Screen"</strong> <span style="font-size: 1.2em;">➕</span></li>
+                            <li>Tap <strong>"Add"</strong> in the top right</li>
+                        </ol>
+                        <button class="btn-primary" onclick="this.closest('.ios-install-modal').remove()">Got it!</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                // Close modal when clicking outside
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+            });
+
+            // Append to body (bottom-right position)
+            document.body.appendChild(iosButton);
+        }
+
+        iosButton.classList.add('show');
+    }
+
+    showFallbackInstallButton() {
+        // Create fallback install button for desktop/manual install
+        let installButton = document.getElementById('pwa-install-btn');
+        if (!installButton) {
+            installButton = document.createElement('button');
+            installButton.id = 'pwa-install-btn';
+            installButton.className = 'btn-secondary';
+            installButton.innerHTML = '📱 Install App';
+
+            installButton.addEventListener('click', () => {
+                const modal = document.createElement('div');
+                modal.className = 'ios-install-modal';
+                modal.innerHTML = `
+                    <div class="ios-install-content">
+                        <h3>Install Git-Done</h3>
+                        <p><strong>Chrome/Edge (Desktop):</strong></p>
+                        <ol>
+                            <li>Click the <strong>⊕ Install</strong> icon in the address bar</li>
+                            <li>Or use browser menu → "Install Git-Done"</li>
+                        </ol>
+                        <p><strong>Chrome (Android):</strong></p>
+                        <ol>
+                            <li>Tap menu (⋮) → "Install app" or "Add to Home screen"</li>
+                        </ol>
+                        <button class="btn-primary" onclick="this.closest('.ios-install-modal').remove()">Got it!</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) modal.remove();
+                });
+            });
+
+            // Append to body (bottom-right position)
+            document.body.appendChild(installButton);
+        }
+
+        installButton.classList.add('show');
+    }
+
+    showUpdateNotification() {
+        // Simple update notification
+        const notification = document.createElement('div');
+        notification.className = 'pwa-update-notification';
+        notification.innerHTML = `
+
             📱 App updated! Refresh to get the latest version.
             <button onclick="window.location.reload()">Refresh</button>
         `;

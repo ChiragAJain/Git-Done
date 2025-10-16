@@ -135,6 +135,14 @@ def service_worker():
     response = make_response(application.send_static_file('service-worker.js'))
     response.headers['Content-Type'] = 'application/javascript'
     response.headers['Service-Worker-Allowed'] = '/'
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+@application.route('/manifest.json')
+def manifest():
+    response = make_response(application.send_static_file('manifest.json'))
+    response.headers['Content-Type'] = 'application/manifest+json'
+    response.headers['Cache-Control'] = 'no-cache'
     return response
 
 @application.route('/api/github-webhook', methods=['POST'])
