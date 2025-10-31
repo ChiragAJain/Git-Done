@@ -410,9 +410,10 @@ def create_goal():
         return jsonify({'error':'Invalid repository URL. Use format: https://github.com/owner/repo'}),400
     embed_token = secrets.token_urlsafe(16)
     completion_type = data.get('completion_type', 'commit')
-    if completion_type not in ['commit', 'issue']:
-        return jsonify({'error':'Invalid completion_type. Must be "commit" or "issue"'}),400
-    
+
+    if completion_type not in ['commit', 'issue', 'pr', 'tag', 'manual']:
+        return jsonify({'error':'Invalid completion_type. Must be one of "commit", "issue", "pr", "tag", or "manual"'}), 400
+
     try:
         raw_deadline = data.get('deadline')
         parsed_deadline = parse_deadline(raw_deadline)
@@ -535,7 +536,7 @@ def update_goal(goal_id):
         goal.completion_condition = completion_condition.strip()
 
     if completion_type is not None:
-        if completion_type not in ('commit', 'issue'):
+        if completion_type not in ('commit', 'issue', 'pr', 'tag', 'manual'):
             return jsonify({'error': 'Invalid completion_type'}), 400
         goal.completion_type = completion_type
 

@@ -24,10 +24,24 @@ class GitDoneApp {
         
         if (completionTypeSelect && completionConditionInput) {
             completionTypeSelect.addEventListener('change', (e) => {
-                if (e.target.value === 'issue') {
-                    completionConditionInput.placeholder = 'Issue number (e.g., 42 or #42)';
-                } else {
-                    completionConditionInput.placeholder = 'Completion tag (e.g., #feature-complete)';
+            switch (e.target.value) {
+                    case 'issue':
+                        completionConditionInput.placeholder = 'Issue number (e.g., 42 or #42)';
+                        break;
+                    case 'commit':
+                        completionConditionInput.placeholder = 'Commit SHA (e.g., abc123)';
+                        break;
+                    case 'pr':
+                        completionConditionInput.placeholder = 'Pull Request number (e.g., 42 or #42)';
+                        break;
+                    case 'tag':
+                        completionConditionInput.placeholder = 'Tag name (e.g., v1.0.0)';
+                        break;
+                    case 'manual':
+                        completionConditionInput.placeholder = 'Completion tag (e.g., #feature-complete)';
+                        break;
+                    default:
+                        completionConditionInput.placeholder = '';
                 }
             });
         }
@@ -280,9 +294,27 @@ class GitDoneApp {
         const repoName = goal.repo_url.split('/').slice(-2).join('/');
         
         // Determine completion type display
-        const completionTypeDisplay = goal.completion_type === 'issue' 
-            ? `🎫 Complete when issue ${goal.completion_condition} is closed`
-            : `💬 Complete with commit message: ${goal.completion_condition}`;
+        let completionTypeDisplay = '';
+        switch (goal.completion_type) {
+            case 'commit':
+                completionTypeDisplay = `💬 Complete with commit message: ${goal.completion_condition}`;
+                break;
+            case 'issue':
+                completionTypeDisplay = `🎫 Complete when issue ${goal.completion_condition} is closed`;
+                break;
+            case 'pr':
+                completionTypeDisplay = `🔀 Complete when pull request ${goal.completion_condition} is merged`;
+                break;
+            case 'tag':
+                completionTypeDisplay = `🏷️ Complete when tag ${goal.completion_condition} is created`;
+                break;
+            case 'manual':
+                completionTypeDisplay = `🖐️ Manually mark as completed`;
+                break;
+            default:
+                completionTypeDisplay = `⚙️ Completion condition: ${goal.completion_condition}`;
+        }
+
 
         widget.innerHTML = `
             <h3>${goal.title}</h3>
